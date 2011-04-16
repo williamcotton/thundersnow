@@ -9,7 +9,7 @@ Hit 'd' to delete a node.
 
 Oh, don't fork this just yet as I'm probably going to be making some significant architectural changes... the bigs ones being adding multiple "editor contexts" and "view contexts", allowing for macro nodes, interators, render in image, etc.
 
-TOD
+TODO
 ----
 * Make it based on -1 to 1, with the origin in the center, instead of the origin being in the top left and based on pixels, so that things can be resized.
 * Copy and Paste
