@@ -1,13 +1,15 @@
 Thundersnow
 ===========
 
-Command+Enter triggers the "add new node window". Right now, the choices are: lfo, sprite, and rgb_color
+You can check out the demo [here](http://williamcotton.github.com/thundersnow/).
+
+'Command + Enter' triggers the "add new node window". Right now, the choices are: lfo, sprite, and rgb_color
 
 Hit 'd' to delete a node.
 
 Oh, don't fork this just yet as I'm probably going to be making some significant architectural changes... the bigs ones being adding multiple "editor contexts" and "view contexts", allowing for macro nodes, interators, render in image, etc.
 
-TODO
+TOD
 ----
 * Make it based on -1 to 1, with the origin in the center, instead of the origin being in the top left and based on pixels, so that things can be resized.
 * Copy and Paste
