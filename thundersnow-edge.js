@@ -52,7 +52,7 @@ Thundersnow.Edge.prototype = {
   },
   
   draw: function(x1, y1, x2, y2) {
-    this.ec.strokeStyle = "rgba(255,0,0,0.7)";
+    this.ec.strokeStyle = "rgba(190,10,40,0.5)";
     this.ec.lineWidth = this.lineWidth || 4;
     this.ec.beginPath();
     this.ec.moveTo(x1, y1);

@@ -36,28 +36,28 @@ Thundersnow.editor = {
   initEvents: function() {
     var that = this;
     this.element.onmousemove = function(event) {
-      that.nodeMouseMove(event);
+      that.nodeAllMouseMove(event);
       that.edgeMouseMove(event);
       that.mouseMove(event);
     }
     this.element.onclick = function(event) {
-      that.nodeMouseEvent(event, "_clickCallbacks");
+      that.nodeClickEvent(event);
     }
     this.element.ondblclick = function(event) {
-      that.nodeMouseEvent(event, "_dblClickCallbacks");
+      that.nodeDblClickEvent(event);
     }
     this.element.onmousedown = function(event) {
-      that.nodeMouseEvent(event, "_mouseDownCallbacks");
+      that.nodeMouseDownEvent(event);
     }
     this.element.onmouseup = function(event) {
-      that.nodeMouseEvent(event, "_mouseUpCallbacks");
+      that.nodeMouseUpEvent(event);
     }
     window.onkeydown = function(event) {
-      that.nodeKeyEvent(event, "_keyDownCallbacks");
+      that.nodeKeyDownEvent(event);
       that.keyDown(event);
     }
     window.onkeyup = function(event) {
-      that.nodeKeyEvent(event, "_keyUpCallbacks");
+      that.nodeKeyUpEvent(event);
     }
   },
   
@@ -73,52 +73,155 @@ Thundersnow.editor = {
     }
 
   },
-
-  nodeKeyEvent: function(event, callback_list) {
-    if (this.activeNode) {
-      return this.nodeCallback(this.activeNode, callback_list);
+  
+  nodeKeyDownEvent: function(event) {
+    node = this.activeNode;
+    if (node) {
+      switch(event.keyCode) {
+        case 38: // up
+          node.moveBy(node.x, 0, node.y, -5);
+          break;
+        case 39: // right
+          node.moveBy(node.x, 5, node.y, 0);
+          break;
+        case 40: // down
+          node.moveBy(node.x, 0, node.y, 5);
+          break;
+        case 37: // left
+          node.moveBy(node.x, -5, node.y, 0);
+          break;
+        case 68: // d
+          node.remove();
+          break;
+      }
+      Thundersnow.editor.redraw();
     }
   },
   
-  nodeMouseMove: function(event) {
+  nodeKeyUpEvent: function(event) {
+    node = this.activeNode;
+    if (node) {
+
+    }
+  },
+  
+  nodeInEvent: function(event) {
     for (var n in this.nodes) {
       var node = this.nodes[n];
       if (node.isCoordinateInside(event.offsetX,event.offsetY)) {
-        if (!node._mouseWasOver) {
-          this.nodeCallback(node, "_mouseEnterCallbacks");
-        }
-        this.nodeCallback(node, "_mouseOverCallbacks");
-        this.nodeCallback(node, "_mouseMoveCallbacks");
-        node._mouseWasOver = true;
+        return node;
+      }
+    }
+  },
+  
+  nodeClickEvent: function(event) {
+    var node = this.nodeInEvent(event);
+    if (node) {
+      
+    }
+  },
+  
+  nodeMouseDownEvent: function(event) {
+    var node = this.nodeInEvent(event);
+    if (node) {
+      var output = node.isCoordinateInsideOutput(event.offsetX, event.offsetY);
+      var input = node.isCoordinateInsideInput(event.offsetX, event.offsetY);
+
+      if (output) {
+        this.edgeMouseDownOutput(event, output);
+        //this.nodeMouseDownOnOutputEvent(node, output, event);
+        
+        // CURRENTLY REFACTORING THIS STUPID IO RELATED STUFF
+        
+      }
+      else if (input) {
+        this.edgeMouseDownInput(event, input);
       }
       else {
+        this.setActiveNode(node);
+        node.isBeingMoved = true;
+        node.startCoordinatesForMove = {
+          clickX: event.offsetX,
+          clickY: event.offsetY,
+          nodeX: parseInt(node.x),
+          nodeY: parseInt(node.y)
+        }
+      }
+    }
+  },
+  
+  nodeMouseUpEvent: function(event) {
+    var node = this.nodeInEvent(event);
+    if (node) {
+      node.isBeingMoved = false;
+
+      var input = node.isCoordinateInsideInput(event.offsetX, event.offsetY);
+      var output = node.isCoordinateInsideOutput(event.offsetX, event.offsetY);
+
+      if (input) {
+        this.edgeMouseUpInput(event, input);
+      }
+      else if (output) {
+        this.edgeMouseUpOutput(event, output);
+      }
+      else {
+        this.mouseUp(event);
+      }
+    }
+    else {
+      this.mouseUp(event);
+    }
+  },
+  
+  nodeDblClickEvent: function(event) {
+    var node = this.nodeInEvent(event);
+    if (node) {
+      var input = node.isCoordinateInsideInput(event.offsetX, event.offsetY);
+    
+      if (input) {
+        this.edgeDblClickInput(event, input);
+      }
+      else {
+        
+      }
+    }
+  },
+  
+  nodeAllMouseMove: function(event) {
+    var node = this.nodeInEvent(event);
+    if (node) {
+      if (!node._mouseWasOver) {
+        this.nodeMouseEnterEvent(node, event);
+      }
+      this.nodeMouseOverEvent(node, event);
+      this.nodeMouseMoveEvent(node, event);
+      node._mouseWasOver = true;
+    }
+    else {
+      for (var n in this.nodes) {
+        var node = this.nodes[n];
         if (node._mouseWasOver) {
-          this.nodeCallback(node, "_mouseLeaveCallbacks");
+          this.nodeMouseLeaveEvent(node, event);
         }
         node._mouseWasOver = false;
       }
     }
   },
   
-  nodeMouseEvent: function(event, callback_list) {
-    for (var n in this.nodes.reverse()) { // reversed so we get the activeNode first..
-      var node = this.nodes[n];
-      if (node.isCoordinateInside(event.offsetX,event.offsetY)) {
-        this.nodeCallback(node, callback_list);
-        return;
-      }
-      else if ((callback_list == "_mouseUpCallbacks") && ((parseInt(n) + 1) >= this.nodes.length)) {
-        this.mouseUp(event);
-        return;
-      }
-    }
+  nodeMouseEnterEvent: function(node, event) {
+    
   },
   
-  nodeCallback: function(node, callback_list) {
-    for (var c in node[callback_list]) {
-      var callback = node[callback_list][c];
-      return callback(event);
-    }
+  nodeMouseLeaveEvent: function(node, event) {
+    
+  },
+  
+  nodeMouseOverEvent: function(node, event) {
+    
+  },
+  
+  nodeMouseMoveEvent: function(node, event) {
+    
   },
   
   edgeMouseMove: function(event) {
@@ -130,6 +233,13 @@ Thundersnow.editor = {
       
     }
   },
+  
+  nodeMouseDownOnOutputEvent: function(node, output, event) {
+    var edge = new Thundersnow.Edge({
+      output_node: node,
+      output_attribute: output.name
+    });
+  },
 
   edgeMouseDownOutput: function(event, output) {
     var edge = new Thundersnow.Edge({
@@ -139,7 +249,9 @@ Thundersnow.editor = {
   },
   
   edgeMouseUpInput: function(event, input) {
+    console.log(this.edgeIsBeingCreated);
     if (this.edgeIsBeingCreated && input != this.previousInputForEdgeBeingCreated) {
+      console.log("make the connection!");
       this.edgeBeingCreated.makeConnection(input);
       this.previousInputForEdgeBeingCreated = null;
       this.redraw();
@@ -162,6 +274,7 @@ Thundersnow.editor = {
   startEdgeCreation: function(edge) {
     this.edgeIsBeingCreated = true;
     this.edgeBeingCreated = edge;
+    this.previousInputForEdgeBeingCreated = null;
   },
   
   cancelEdgeCreation: function() {
@@ -176,8 +289,8 @@ Thundersnow.editor = {
   
   mouseUp: function(event) {
     if (this.edgeIsBeingCreated) {
-      this.cancelEdgeCreation();
       this.edges.splice(this.edges.indexOf(this.edgeBeingCreated),1);
+      this.cancelEdgeCreation();
       this.edgeBeingCreated = null;
       this.redraw();
     }
@@ -302,6 +415,32 @@ Thundersnow.editor = {
   
   hideAddNodeWindow: function() {
     this.addNodeWindowElement.style.display = "none";
+  },
+  
+  roundRect: function(ctx, x, y, width, height, radius, fill, stroke) {
+    if (typeof stroke == "undefined" ) {
+      stroke = true;
+    }
+    if (typeof radius === "undefined") {
+      radius = 5;
+    }
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (stroke) {
+      ctx.stroke();
+    }
+    if (fill) {
+      ctx.fill();
+    }        
   }
   
 }

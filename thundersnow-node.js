@@ -13,17 +13,6 @@ Thundersnow.Node = function(options) {
   this.inputAttributes = {};
   this.outputAttributes = {};
   
-  this._mouseOverCallbacks = [];
-  this._mouseEnterCallbacks = [];
-  this._mouseLeaveCallbacks = [];
-  this._clickCallbacks = [];
-  this._dblClickCallbacks = [];
-  this._mouseUpCallbacks = [];
-  this._mouseDownCallbacks = [];
-  this._mouseMoveCallbacks = [];
-  this._keyDownCallbacks = [];
-  this._keyUpCallbacks = [];
-  
   if (Thundersnow.editor) { // EDITOR DEP
     this.ec = Thundersnow.editor.context;
   }
@@ -43,8 +32,10 @@ Thundersnow.Node = function(options) {
 
 Thundersnow.Node.prototype = {
   
-  _backgroundFill: "rgba(255,255,255,0.95)",
-  _backgroundFillActive: "rgba(255,255,200,0.95)",
+  _backgroundColor: "rgba(10,100,149,0.75)",
+  _borderColor: "rgba(0,0,0,0.45)",
+  _borderColorActive: "rgba(255,255,0,0.45)",
+  _drawBackgroundColor: "rgba(125,25,115,0.75)",
   _width: 200,
   _height: 200,
   
@@ -55,11 +46,9 @@ Thundersnow.Node.prototype = {
     this.height = this._height;
     this.nodeType = options.nodeType;
     this.uuid = options.uuid || Thundersnow.generateUUID();
-    this.backgroundFill = this._backgroundFill;
+    this.borderColor = this._borderColor;
+    this.backgroundColor = this._backgroundColor;
     this.initNodeType(options);
-    if (Thundersnow.editor) {
-      this.initIOCreationEvents();
-    }
     this.redraw();
   },
   
@@ -103,6 +92,10 @@ Thundersnow.Node.prototype = {
     
     this.height = this._ioOffsetY(maxIOCount) - this._ioPadding;
     
+    if (nodeType.runLoop.toString().indexOf("this.vc") != -1) {
+      this.backgroundColor = this._drawBackgroundColor;
+    }
+    
   },
   
   remove: function() {
@@ -110,9 +103,20 @@ Thundersnow.Node.prototype = {
   },
   
   draw: function() {
-    this.ec.fillStyle = this.backgroundFill;
-    this.ec.fillRect(this.x, this.y, this.width, this.height);
-    this.ec.fillStyle = "#000";
+    
+    var lingrad = this.ec.createLinearGradient(this.x,this.y,this.x + this.width,this.y + this.height);
+    lingrad.addColorStop(0, this.backgroundColor);
+    lingrad.addColorStop(1, '#000');
+    this.ec.fillStyle = lingrad;
+    
+    
+    //this.ec.fillStyle = this.backgroundFill;
+    this.ec.strokeStyle = this.borderColor;
+    
+    // this.ec.fillRect(this.x, this.y, this.width, this.height);
+    Thundersnow.editor.roundRect(this.ec, this.x, this.y, this.width, this.height, 5, this.ec.fillStyle, this.ec.strokeStyle);
+    
+    this.ec.fillStyle = "#fff";
     this.ec.font = '15px sans-serif';
     this.ec.fillText(this.nodeType, this.x + 5, this.y + 15);
   },
@@ -143,12 +147,12 @@ Thundersnow.Node.prototype = {
   },
   
   setActive: function() {
-    this.backgroundFill = this._backgroundFillActive;
+    this.borderColor = this._borderColorActive;
     this.isActive = true;
   },
   
   setInactive: function() {
-    this.backgroundFill = this._backgroundFill;
+    this.borderColor = this._borderColor;
     this.isActive = false;
   },
   
@@ -238,15 +242,15 @@ Thundersnow.Node.prototype = {
   },
   
   drawIO: function(options) {
-    this.ec.strokeStyle = "#000000";
-    this.ec.fillStyle = "#FFFF00";
+    this.ec.strokeStyle = "rgba(0,0,0,0.75)";
+    this.ec.fillStyle = "rgba(255,255,0,0.75)";
     this.ec.lineWidth = 3;
     this.ec.beginPath();
     this.ec.arc(options.x,options.y,this._ioRadius,0,Math.PI*2,true);
     this.ec.closePath();
     this.ec.stroke();
     this.ec.fill();
-    this.ec.fillStyle = "#000";
+    this.ec.fillStyle = "#fff";
     this.ec.font = '10px sans-serif';
     if (options.ioType == "input") {
       var x = options.x + 12;
@@ -337,104 +341,6 @@ Thundersnow.Node.prototype = {
     
   },
   
-  /*
-  
-  Events
-  
-  */
-  
-  initIOCreationEvents: function() {
-    
-    // it sort of feels like this shouldn't be in here and that this event related code should be up with all the other event related code...
-    // if that's the case, these input and output objects should be in the global scope of things... they can still be (and are) associated with nodes...
-    
-    // but then again, this is nicely encapsulated, right? inputs and outputs are still under the umbrella of nodes...
-    
-    
-    var node = this;
-
-    this.mouseDown(function(event) {
-
-      var output = node.isCoordinateInsideOutput(event.offsetX, event.offsetY);
-      var input = node.isCoordinateInsideInput(event.offsetX, event.offsetY);
-
-      if (output) {
-        Thundersnow.editor.edgeMouseDownOutput(event, output);
-      }
-      else if (input) {
-        Thundersnow.editor.edgeMouseDownInput(event, input);
-      }
-      else {
-        Thundersnow.editor.setActiveNode(node);
-        node.isBeingMoved = true;
-        node.startCoordinatesForMove = {
-          clickX: event.offsetX,
-          clickY: event.offsetY,
-          nodeX: parseInt(node.x),
-          nodeY: parseInt(node.y)
-        }
-      }
-
-
-    });
-
-    this.mouseUp(function(event) {
-      
-      node.isBeingMoved = false;
-
-      var input = node.isCoordinateInsideInput(event.offsetX, event.offsetY);
-      var output = node.isCoordinateInsideOutput(event.offsetX, event.offsetY);
-
-      if (input) {
-        Thundersnow.editor.edgeMouseUpInput(event, input);
-      }
-      else if (output) {
-        Thundersnow.editor.edgeMouseUpOutput(event, output);
-      }
-      else {
-        Thundersnow.editor.mouseUp(event);
-      }
-
-    });
-    
-    this.dblClick(function(event) {
-      
-      var input = node.isCoordinateInsideInput(event.offsetX, event.offsetY);
-    
-      if (input) {
-        Thundersnow.editor.edgeDblClickInput(event, input);
-      }
-      else {
-        
-      }
-      
-    });
-    
-    this.keyDown(function(event) {
-      
-      switch(event.keyCode) {
-        case 38: // up
-          node.moveBy(node.x, 0, node.y, -5);
-          break;
-        case 39: // right
-          node.moveBy(node.x, 5, node.y, 0);
-          break;
-        case 40: // down
-          node.moveBy(node.x, 0, node.y, 5);
-          break;
-        case 37: // left
-          node.moveBy(node.x, -5, node.y, 0);
-          break;
-        case 68: // d
-          node.remove();
-          break;
-      }
-      Thundersnow.editor.redraw();
-
-    });
-    
-  },
-  
   isCoordinateInside: function(x, y) {
     if ( (x >= this.x) && (x <= (this.x + this.width)) && (y >= this.y) && (y <= (this.y + this.height)) ) {
       return true;
@@ -446,46 +352,6 @@ Thundersnow.Node.prototype = {
   
   // this is pretty genaric event stuff, this could be moved out and then the class could be "extended"
   
-  _mouseWasOver: false,
-  
-  mouseOver: function(callback) {
-    this._mouseOverCallbacks.push(callback);
-  },
-  
-  mouseEnter: function(callback) {
-    this._mouseEnterCallbacks.push(callback);
-  },
-  
-  mouseLeave: function(callback) {
-    this._mouseLeaveCallbacks.push(callback);
-  },
-  
-  mouseMove: function(callback) {
-    this._mouseMoveCallbacks.push(callback);
-  },
-  
-  click: function(callback) {
-    this._clickCallbacks.push(callback);
-  },
-  
-  dblClick: function(callback) {
-    this._dblClickCallbacks.push(callback);
-  },
-  
-  mouseDown: function(callback) {
-    this._mouseDownCallbacks.push(callback);
-  },
-  
-  mouseUp: function(callback) {
-    this._mouseUpCallbacks.push(callback);
-  },
-  
-  keyDown: function(callback) {
-    this._keyDownCallbacks.push(callback);
-  },
-  
-  keyUp: function(callback) {
-    this._keyUpCallbacks.push(callback);
-  }
+  _mouseWasOver: false
   
 }
