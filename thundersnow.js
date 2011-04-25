@@ -15,6 +15,10 @@ Date: 4/10/2011
 
   Thundersnow = {
     
+    options: {
+      saveToUrl: false
+    },
+    
     nodes: [],
     edges: [],
     
@@ -27,9 +31,36 @@ Date: 4/10/2011
       if (Thundersnow.viewer) {
         this.viewer.init();
       }
+      this.checkUrlForSave();
+      
+      window.onpopstate = function(event) {
+        Thundersnow.clearAll();
+        if (Thundersnow.options.saveToUrl) {
+          Thundersnow.checkUrlForSave()
+        }
+        else if (event.state) {
+          Thundersnow.loadFromJSON(event.state);
+        }
+        if (Thundersnow.editor) {
+          Thundersnow.editor.redraw();
+        }
+      };
+      
+    },
+    
+    checkUrlForSave: function() {
+      var base64 = gup('s');
+      if (base64) {
+        var json = atob(base64);
+        this.loadFromJSON(json);
+        return true;
+      }
+      return false;
+      
     },
     
     loadFromJSON: function(json) {
+      
       var parsed_json = JSON.parse(json);
       
       for (var n in parsed_json.nodes) {
@@ -44,7 +75,7 @@ Date: 4/10/2011
       }
     },
     
-    serializeToJSON: function(nodes, edges) {
+    serializeToJSON: function() {
       var nodes = [];
       for (var n in this.nodes) {
         var node = this.nodes[n];
@@ -59,8 +90,50 @@ Date: 4/10/2011
         nodes: nodes,
         edges: edges
       }
-      console.log(output);
       return JSON.stringify(output);
+    },
+    
+    onChange: function() {
+      if (this.options.saveToUrl) {
+        this.saveToUrl();
+      }
+      else {
+        this.pushToHistory();
+      }
+    },
+    
+    pushToHistory: function() {
+      window.history.pushState(this.serializeToJSON(), "Saved", window.location.href);
+    },
+    
+    saveToUrl: function() {
+      
+      // if (!confirm("Depending on the file size, this may take some time. Do you wish to continue?")) {
+      //   return;
+      // }
+      
+      this.convertToBase64(this.serializeToJSON(), function(data) {
+        var base64 = data;
+        var url_root = window.location.href.split("?")[0];
+        var url_base64 = gup('s');
+        if (url_base64 != base64) {
+          window.history.pushState("object", "Saved", url_root + "?s=" + base64);
+        }
+      });
+      
+    },
+    
+    convertToBase64: function(data, callback) {
+      if (window.Worker) {
+        var btoa_worker = new Worker('btoa_worker.js');
+        btoa_worker.onmessage = function(e){
+          callback(e.data);
+        }
+        btoa_worker.postMessage(data);
+      }
+      else {
+        callback(btoa(data));
+      }
     },
     
     findNodeByUUID: function(node_uuid) {
@@ -76,8 +149,29 @@ Date: 4/10/2011
       return Math.random(0).toString(); // WAZZZZZZUPPP!!!
     },
     
+    clearAll: function() {
+      for (var n in this.nodes) {
+        var node = this.nodes[n];
+        delete node;
+      }
+      for (var e in this.edges) {
+        var edge = this.edges[n];
+        delete edge;
+      }
+      this.nodes = [];
+      this.edges = [];
+      if (Thundersnow.editor) {
+        Thundersnow.editor.nodes = Thundersnow.nodes;
+        Thundersnow.editor.edges = Thundersnow.edges;
+      }
+      if (Thundersnow.viewer) {
+        Thundersnow.viewer.nodes = Thundersnow.nodes;
+        Thundersnow.viewer.edges = Thundersnow.edges;
+      }
+    },
+    
     testLoad: function() {
-      var save = "{\"nodes\":[{\"x\":10,\"y\":220,\"nodeType\":\"lfo\",\"uuid\":\"0.24939937610179186\"},{\"x\":10,\"y\":10,\"nodeType\":\"lfo\",\"uuid\":\"0.6434503174386919\"},{\"x\":340,\"y\":10,\"nodeType\":\"sprite\",\"uuid\":\"0.5609620048198849\"},{\"x\":340,\"y\":190,\"nodeType\":\"sprite\",\"uuid\":\"0.32594600692391396\"}],\"edges\":[{\"output_node_uuid\":\"0.6434503174386919\",\"output_attribute\":\"output\",\"input_node_uuid\":\"0.5609620048198849\",\"input_attribute\":\"x\"},{\"output_node_uuid\":\"0.6434503174386919\",\"output_attribute\":\"output\",\"input_node_uuid\":\"0.32594600692391396\",\"input_attribute\":\"y\"},{\"output_node_uuid\":\"0.24939937610179186\",\"output_attribute\":\"output\",\"input_node_uuid\":\"0.6434503174386919\",\"input_attribute\":\"amplitude\"}]}";
+      var save = "{\"nodes\":[{\"x\":10,\"y\":220,\"nodeType\":\"lfo\",\"name\":null,\"uuid\":\"0.24939937610179186\",\"inputAttributes\":{\"period\":0.5,\"amplitude\":50,\"offset\":50}},{\"x\":10,\"y\":10,\"nodeType\":\"lfo\",\"name\":null,\"uuid\":\"0.6434503174386919\",\"inputAttributes\":{\"period\":0.5,\"amplitude\":73.4658675300188,\"offset\":50}},{\"x\":340,\"y\":10,\"nodeType\":\"sprite\",\"name\":null,\"uuid\":\"0.5609620048198849\",\"inputAttributes\":{\"x\":83.08823186070919,\"y\":0,\"width\":10,\"height\":10,\"color\":\"#FFF\",\"image\":null}},{\"x\":340,\"y\":190,\"nodeType\":\"sprite\",\"name\":null,\"uuid\":\"0.32594600692391396\",\"inputAttributes\":{\"x\":0,\"y\":83.08823186070919,\"width\":\"100\",\"height\":73.4658675300188,\"color\":\"#FFF\",\"image\":null}}],\"edges\":[{\"output_node_uuid\":\"0.6434503174386919\",\"output_attribute\":\"output\",\"input_node_uuid\":\"0.5609620048198849\",\"input_attribute\":\"x\"},{\"output_node_uuid\":\"0.6434503174386919\",\"output_attribute\":\"output\",\"input_node_uuid\":\"0.32594600692391396\",\"input_attribute\":\"y\"},{\"output_node_uuid\":\"0.24939937610179186\",\"output_attribute\":\"output\",\"input_node_uuid\":\"0.6434503174386919\",\"input_attribute\":\"amplitude\"},{\"output_node_uuid\":\"0.24939937610179186\",\"output_attribute\":\"output\",\"input_node_uuid\":\"0.32594600692391396\",\"input_attribute\":\"height\"}]}"
       this.loadFromJSON(save);
     },
     
@@ -141,7 +235,7 @@ Date: 4/10/2011
   
   window.onload = function() {
     Thundersnow.init();
-    Thundersnow.testLoad();
+    //Thundersnow.testLoad();
     //Thundersnow.test();
   }
   

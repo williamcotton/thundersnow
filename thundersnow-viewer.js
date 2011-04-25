@@ -76,6 +76,39 @@ Thundersnow.viewer = {
       }
     }
     
+  },
+  
+  origin: function() {
+    return {
+      x: Thundersnow.viewer._width/2,
+      y: Thundersnow.viewer._height/2
+    }
+  },
+  
+  tX: function(x) {
+    return (parseFloat(x) + 1) * (Thundersnow.viewer._width/2);
+  },
+  
+  tY: function(y) {
+    return ((parseFloat(y) + 1) * Thundersnow.viewer._height/2);
+  },
+  
+  tW: function(w) {
+    return parseFloat(w) * Thundersnow.viewer._width/2;
+  },
+  
+  tH: function(h) {
+    return parseFloat(h) * Thundersnow.viewer._height/2 * Thundersnow.viewer._width/Thundersnow.viewer._height;
+  },
+  
+  translate: function(x,y,w,h) {
+    var t = {
+      x: Thundersnow.viewer.tX(x) - Thundersnow.viewer.tW(w)/2,
+      y: Thundersnow.viewer.tY(y) - Thundersnow.viewer.tH(h)/2,
+      w: Thundersnow.viewer.tW(w),
+      h: Thundersnow.viewer.tH(h)
+    }
+    return t;
   }
   
 }

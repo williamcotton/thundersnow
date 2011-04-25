@@ -11,8 +11,8 @@ Thundersnow.nodeTypes.lfo = {
   init: function() {
     
     this.createInput("period", 0.5);
-    this.createInput("amplitude", 50);
-    this.createInput("offset", 50);
+    this.createInput("amplitude", 1);
+    this.createInput("offset", 0);
     
     this.createOutput("output", 0);
     

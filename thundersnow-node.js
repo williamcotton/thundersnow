@@ -11,6 +11,8 @@ Thundersnow.Node = function(options) {
   this._outputs = [];
   
   this.inputAttributes = {};
+  this.presetInputAttributes = options.inputAttributes;
+  
   this.outputAttributes = {};
   
   if (Thundersnow.editor) { // EDITOR DEP
@@ -45,6 +47,7 @@ Thundersnow.Node.prototype = {
     this.width = this._width;
     this.height = this._height;
     this.nodeType = options.nodeType;
+    this.name = options.name || null;
     this.uuid = options.uuid || Thundersnow.generateUUID();
     this.borderColor = this._borderColor;
     this.backgroundColor = this._backgroundColor;
@@ -72,6 +75,12 @@ Thundersnow.Node.prototype = {
       this.runLoop = nodeType.runLoop;
     }
     
+    this.tX = Thundersnow.viewer.tX;
+    this.tY = Thundersnow.viewer.tY;
+    this.tW = Thundersnow.viewer.tW;
+    this.tH = Thundersnow.viewer.tH;
+    this.translate = Thundersnow.viewer.translate;
+    
     var inputCount = 0;
     var outputCount = 0;
     var maxIOCount;
@@ -96,6 +105,10 @@ Thundersnow.Node.prototype = {
       this.backgroundColor = this._drawBackgroundColor;
     }
     
+    for (var p in this.presetInputAttributes) {
+      this.inputAttributes[p] = this.presetInputAttributes[p];
+    }
+    
   },
   
   remove: function() {
@@ -118,7 +131,16 @@ Thundersnow.Node.prototype = {
     
     this.ec.fillStyle = "#fff";
     this.ec.font = '15px sans-serif';
-    this.ec.fillText(this.nodeType, this.x + 5, this.y + 15);
+    
+    var title;
+    if (this.name) {
+      title = this.name;
+    }
+    else {
+      title = this.nodeType;
+    }
+    
+    this.ec.fillText(title.slice(0,28), this.x + 5, this.y + 15);
   },
   
   redraw: function() {
@@ -161,9 +183,26 @@ Thundersnow.Node.prototype = {
       x: this.x,
       y: this.y,
       nodeType: this.nodeType,
-      uuid: this.uuid
+      name: this.name,
+      uuid: this.uuid,
+      inputAttributes: this.inputAttributesJSON()
     };
     return json;
+  },
+  
+  inputAttributesJSON: function() {
+    var stringInputAttributes = {};
+    for (i in this.inputAttributes) {
+      var inputAttribute = this.inputAttributes[i];
+      if (typeof(inputAttribute) == "string" || typeof(inputAttribute) == "number") {
+        stringInputAttributes[i] = inputAttribute;
+      }
+    }
+    return stringInputAttributes;
+  },
+  
+  inputAttributeIsActive: function(inputAttribute) {
+    
   },
   
   /*
