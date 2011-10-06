@@ -25,6 +25,9 @@ Date: 4/10/2011
     nodeTypes: {},
 
     init: function() {
+      
+      var justLoaded = true;
+      
       if (Thundersnow.editor) {
         this.editor.init();
       }
@@ -34,16 +37,22 @@ Date: 4/10/2011
       this.checkUrlForSave();
       
       window.onpopstate = function(event) {
-        Thundersnow.clearAll();
-        if (Thundersnow.options.saveToUrl) {
-          Thundersnow.checkUrlForSave()
+        if (justLoaded) {
+          justLoaded = false;
         }
-        else if (event.state) {
-          Thundersnow.loadFromJSON(event.state);
+        else {
+          Thundersnow.clearAll();
+          if (Thundersnow.options.saveToUrl) {
+            Thundersnow.checkUrlForSave()
+          }
+          else if (event.state) {
+            Thundersnow.loadFromJSON(event.state);
+          }
+          if (Thundersnow.editor) {
+            Thundersnow.editor.redraw();
+          }
         }
-        if (Thundersnow.editor) {
-          Thundersnow.editor.redraw();
-        }
+
       };
       
     },
