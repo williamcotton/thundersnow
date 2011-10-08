@@ -9,8 +9,8 @@ Viewer Canvas
 
 Thundersnow.viewer = {
   
-  _width: 800,
-  _height: 600,
+  _width: 400,
+  _height: 300,
   
   init: function() {
     this.nodes = Thundersnow.nodes;
