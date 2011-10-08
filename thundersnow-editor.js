@@ -372,11 +372,29 @@ Thundersnow.editor = {
   },
   
   updateSelectionBox: function(event) {
+    
+    var x, y, width, height;
+    if ((this.selectX - event.offsetX) < 0) {
+      x = this.selectX;
+    }
+    else {
+      x = event.offsetX;
+    }
+    if ((this.selectY - event.offsetY) < 0) {
+      y = this.selectY;
+    }
+    else {
+      y = event.offsetY;
+    }
+    
+    width = Math.abs(this.selectX - event.offsetX);
+    height = Math.abs(this.selectY - event.offsetY);
+    
     var box = {
-      x: event.offsetX,
-      y: event.offsetY,
-      width: this.selectX - event.offsetX,
-      height: this.selectY - event.offsetY
+      x: x,
+      y: y,
+      width: width,
+      height: height
     }
     this.checkForSelectionBoxNodeIntersection(box);
     this.drawSelectionBox(box);    
@@ -391,41 +409,23 @@ Thundersnow.editor = {
   checkForSelectionBoxNodeIntersection: function(selection_box) {
     
     var isIntersecting = function(box1, box2) {
-      
-      console.log(box2.x, box2.y, box2.width, box2.height);
-      
-      //Thundersnow.editor.redraw();
-      
-      // Thundersnow.editor.context.fillStyle = "rgba(230,0,0,1)";
-      // Thundersnow.editor.context.fillRect(box1.x,box1.y,box1.width,box1.height);
-      // 
-      // Thundersnow.editor.context.fillStyle = "rgba(230,0,230,1)";
-      // Thundersnow.editor.context.fillRect(box2.x,box2.y,box2.width,box2.height);
-      
-      
       if (!((box1.x + box1.width) >= box2.x)) {
-        console.log("!box1.x + box1.width >= box2.x", box1.x + box1.width, box2.x);
         return false;
       }
       if (!(box1.x <= (box2.x + box2.width))) {
-        console.log("!box1.x <= box2.x + box2.width", box1.x, box2.x + box2.width);
         return false;
       }
-      if (!((box1.y - box1.height) <= box2.y)) {
-        console.log("!box1.y - box1.height <= box2.y", box1.y - box1.height, box2.y);
+      if (!((box1.y + box1.height) >= box2.y)) {
         return false;
       }
-      if (!(box1.y >= (box2.y - box2.height))) {
-        console.log("!box1.y >= box2.y - box2.height", box1.y, box2.y - box2.height);
-        return 0;
+      if (!(box1.y <= (box2.y + box2.height))) {
+        return false;
       }
       return true;
     }
     
     for (var n in this.nodes) {
       var node = this.nodes[n];
-      
-      console.log(n, node.x, node.y);
       if (isIntersecting(node, selection_box)) {
         if (!this.isNodeActive(node)) {
           this.addToActiveNodes(node);
@@ -438,7 +438,6 @@ Thundersnow.editor = {
       }
     }
   },
-  
   
   addToActiveNodes: function(node) {
     this.nodes.splice(this.nodes.indexOf(node),1);
